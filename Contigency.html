@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contingency Table Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        input[type=number] { width: 100%; text-align: center; font-weight: bold; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans p-2 flex flex-col items-center h-screen overflow-hidden">
+    <a href="index.html" id="back-btn" class="absolute top-2 left-2 bg-slate-200 text-slate-700 px-2 py-1 rounded hover:bg-slate-300 transition text-xs font-semibold flex items-center gap-1 z-50">&larr; Back</a>
+    <script>
+        try { if (window.self !== window.top) document.getElementById('back-btn').style.display = 'none'; } 
+        catch (e) { document.getElementById('back-btn').style.display = 'none'; }
+    </script>
+    <div class="w-full text-center mb-2 flex-shrink-0 pt-1">
+        <h1 class="text-xl font-bold text-slate-800 mb-1">Contingency Table Calculator</h1>
+        <button onclick="document.getElementById('manual-modal').classList.remove('hidden')" class="text-teal-600 hover:text-teal-700 text-xs font-semibold flex items-center gap-1 mx-auto bg-teal-50 px-3 py-1 rounded transition border border-teal-100 hover:border-teal-200">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            How to Use
+        </button>
+    </div>
+
+    <!-- Quick Guide Modal -->
+    <div id="manual-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-[2px] z-[100] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6 relative border border-slate-200">
+            <button onclick="document.getElementById('manual-modal').classList.add('hidden')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            <h2 class="text-xl font-bold text-teal-600 mb-5 flex items-center gap-2">🎲 Quick Guide</h2>
+            
+            <div class="space-y-4 text-left">
+                <div>
+                    <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2"><span>1️⃣</span> Name Your Variables</h3>
+                    <p class="text-xs text-slate-600 mt-1 pl-6 leading-relaxed">Click on the bold headers in the Data Table (like <span class="font-bold text-slate-800">Boy</span> or <span class="font-bold text-slate-800">Math</span>) to type your own custom categories. The entire probability card will instantly rewrite its formulas to match your scenario!</p>
+                </div>
+                <div>
+                    <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2"><span>2️⃣</span> Punch in the Numbers</h3>
+                    <p class="text-xs text-slate-600 mt-1 pl-6 leading-relaxed">Enter your raw frequency data into the <span class="font-bold text-slate-800">four white input boxes</span>. The app automatically calculates your rows, columns, and grand total in real-time.</p>
+                </div>
+                <div>
+                    <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2"><span>3️⃣</span> Read the Magic</h3>
+                    <ul class="text-xs text-slate-600 mt-1 pl-6 list-disc ml-4 space-y-1.5 marker:text-teal-400">
+                        <li><strong class="text-slate-700">Marginals:</strong> The basics. (e.g., Overall chance of picking a Boy?)</li>
+                        <li><strong class="text-slate-700">Joint (∩):</strong> The "AND" rule. (e.g., Boy AND takes Math?)</li>
+                        <li><strong class="text-slate-700">Union (∪):</strong> The "OR" rule. (e.g., Boy OR takes Math?)</li>
+                        <li><strong class="text-slate-700">Conditional (|):</strong> The "GIVEN" rule. (e.g., If they take Math, what's the chance they are a Boy?)</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="mt-6 text-center">
+                <button onclick="document.getElementById('manual-modal').classList.add('hidden')" class="bg-teal-600 text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-teal-700 transition w-full shadow-md shadow-teal-500/20">Got it, let's play!</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-7xl w-full grid grid-cols-1 md:grid-cols-2 gap-3 flex-1 min-h-0">
+        <!-- Data Input Card -->
+        <div class="bg-white p-4 rounded-xl shadow-lg border border-slate-200 flex flex-col h-full">
+            <h2 class="text-lg font-bold text-teal-600 mb-3">Data Table</h2>
+            <div class="overflow-x-auto flex-1">
+                <table class="w-full text-center border-collapse border border-slate-300">
+                    <thead>
+                        <tr>
+                            <th class="border border-slate-300 p-2 bg-slate-100"></th>
+                            <th class="border border-slate-300 p-1 bg-slate-100"><input type="text" id="var-c1" value="Math" class="w-full text-center bg-transparent outline-none font-bold text-slate-700" oninput="updateLabels()"></th>
+                            <th class="border border-slate-300 p-1 bg-slate-100"><input type="text" id="var-c2" value="Math'" class="w-full text-center bg-transparent outline-none font-bold text-slate-700" oninput="updateLabels()"></th>
+                            <th class="border border-slate-300 p-2 bg-teal-100 font-bold text-slate-700">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th class="border border-slate-300 p-1 bg-slate-100"><input type="text" id="var-r1" value="Boy" class="w-full text-center bg-transparent outline-none font-bold text-slate-700" oninput="updateLabels()"></th>
+                            <td class="border border-slate-300 p-1"><input type="number" id="bm" value="20" class="p-2 border rounded focus:ring-2 focus:ring-teal-400 outline-none" min="0" oninput="calculate()"></td>
+                            <td class="border border-slate-300 p-1"><input type="number" id="bmn" value="10" class="p-2 border rounded focus:ring-2 focus:ring-teal-400 outline-none" min="0" oninput="calculate()"></td>
+                            <td class="border border-slate-300 p-3 bg-teal-50 font-bold" id="tot-b">30</td>
+                        </tr>
+                        <tr>
+                            <th class="border border-slate-300 p-1 bg-slate-100"><input type="text" id="var-r2" value="Girl" class="w-full text-center bg-transparent outline-none font-bold text-slate-700" oninput="updateLabels()"></th>
+                        <td class="border border-slate-300 p-1"><input type="number" id="gm" value="15" class="p-2 border rounded focus:ring-2 focus:ring-teal-400 outline-none" min="0" oninput="calculate()"></td>
+                        <td class="border border-slate-300 p-1"><input type="number" id="gmn" value="5" class="p-2 border rounded focus:ring-2 focus:ring-teal-400 outline-none" min="0" oninput="calculate()"></td>
+                        <td class="border border-slate-300 p-3 bg-teal-50 font-bold" id="tot-g">20</td>
+                    </tr>
+                    <tr class="bg-teal-50 font-bold">
+                        <th class="border border-slate-300 p-3 bg-teal-100">Total</th>
+                        <td class="border border-slate-300 p-3" id="tot-m">35</td>
+                        <td class="border border-slate-300 p-3" id="tot-mn">15</td>
+                        <td class="border border-slate-300 p-3 text-xl bg-teal-100 text-teal-800" id="grand-tot">50</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        </div>
+
+        <!-- Probabilities Card -->
+        <div class="bg-white p-4 rounded-xl shadow-lg border border-slate-200 flex flex-col h-full min-h-0 relative">
+            <div class="flex justify-between items-center mb-3 flex-shrink-0">
+                <h2 class="text-lg font-bold text-teal-600">Calculated Probabilities</h2>
+                <button onclick="exportToCSV()" class="bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200 px-2.5 py-1 rounded text-xs font-bold transition flex items-center gap-1.5 shadow-sm hover:shadow-md">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    Export to Excel
+                </button>
+            </div>
+            <div class="grid grid-cols-1 gap-2 flex-1 overflow-y-auto pr-1 pb-1">
+                
+                <!-- Marginal Probabilities -->
+                <div class="bg-slate-50 p-2 rounded-lg border border-slate-200 shadow-sm flex flex-col space-y-1">
+                    <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Marginals</div>
+                    <div class="flex justify-between items-center border-b border-slate-200 pb-0.5"><span class="text-xs font-medium text-slate-700">P(<span class="lbl-r1">Boy</span>)</span><div><span class="text-[10px] text-slate-400 mr-1 font-mono" id="frac-b">30/50</span><span class="text-xs font-bold text-teal-600 w-8 inline-block text-right" id="dec-b">0.600</span></div></div>
+                    <div class="flex justify-between items-center border-b border-slate-200 pb-0.5"><span class="text-xs font-medium text-slate-700">P(<span class="lbl-r2">Girl</span>)</span><div><span class="text-[10px] text-slate-400 mr-1 font-mono" id="frac-g">20/50</span><span class="text-xs font-bold text-teal-600 w-8 inline-block text-right" id="dec-g">0.400</span></div></div>
+                    <div class="flex justify-between items-center border-b border-slate-200 pb-0.5"><span class="text-xs font-medium text-slate-700">P(<span class="lbl-c1">Math</span>)</span><div><span class="text-[10px] text-slate-400 mr-1 font-mono" id="frac-m">35/50</span><span class="text-xs font-bold text-teal-600 w-8 inline-block text-right" id="dec-m">0.700</span></div></div>
+                    <div class="flex justify-between items-center border-b border-slate-200 pb-0.5"><span class="text-xs font-medium text-slate-700">P(<span class="lbl-c2">Math'</span>)</span><div><span class="text-[10px] text-slate-400 mr-1 font-mono" id="frac-mn">15/50</span><span class="text-xs font-bold text-teal-600 w-8 inline-block text-right" id="dec-mn">0.300</span></div></div>
+                </div>
+
+                <!-- Joint Probabilities -->
+                <div class="bg-slate-50 p-2 rounded-lg border border-slate-200 shadow-sm flex flex-col space-y-1">
+                    <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Joint (∩)</div>
+                    <div class="flex justify-between items-center border-b border-slate-200 pb-0.5"><span class="text-xs font-medium text-slate-700">P(<span class="lbl-r1">Boy</span> ∩ <span class="lbl-c1">Math</span>)</span><div><span class="text-[10px] text-slate-400 mr-1 font-mono" id="frac-bm">20/50</span><span class="text-xs font-bold text-teal-600 w-8 inline-block text-right" id="dec-bm">0.400</span></div></div>
+                    <div class="flex justify-between items-center border-b border-slate-200 pb-0.5"><span class="text-xs font-medium text-slate-700">P(<span class="lbl-r1">Boy</span> ∩ <span class="lbl-c2">Math'</span>)</span><div><span class="text-[10px] text-slate-400 mr-1 font-mono" id="frac-bmn">10/50</span><span class="text-xs font-bold text-teal-600 w-8 inline-block text-right" id="dec-bmn">0.200</span></div></div>
+                    <div class="flex justify-between items-center border-b border-slate-200 pb-0.5"><span class="text-xs font-medium text-slate-700">P(<span class="lbl-r2">Girl</span> ∩ <span class="lbl-c1">Math</span>)</span><div><span class="text-[10px] text-slate-400 mr-1 font-mono" id="frac-gm">15/50</span><span class="text-xs font-bold text-teal-600 w-8 inline-block text-right" id="dec-gm">0.300</span></div></div>
+                    <div class="flex justify-between items-center border-b border-slate-200 pb-0.5"><span class="text-xs font-medium text-slate-700">P(<span class="lbl-r2">Girl</span> ∩ <span class="lbl-c2">Math'</span>)</span><div><span class="text-[10px] text-slate-400 mr-1 font-mono" id="frac-gmn">5/50</span><span class="text-xs font-bold text-teal-600 w-8 inline-block text-right" id="dec-gmn">0.100</span></div></div>
+                </div>
+
+                <!-- Union Probabilities -->
+                <div class="bg-slate-50 p-2 rounded-lg border border-slate-200 shadow-sm flex flex-col space-y-1">
+                    <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Union (∪)</div>
+                    <div class="flex justify-between items-center border-b border-slate-200 pb-0.5"><span class="text-xs font-medium text-slate-700">P(<span class="lbl-r1">Boy</span> ∪ <span class="lbl-c1">Math</span>)</span><div><span class="text-[10px] text-slate-400 mr-1 font-mono" id="frac-b_or_m">45/50</span><span class="text-xs font-bold text-teal-600 w-8 inline-block text-right" id="dec-b_or_m">0.900</span></div></div>
+                    <div class="flex justify-between items-center border-b border-slate-200 pb-0.5"><span class="text-xs font-medium text-slate-700">P(<span class="lbl-r1">Boy</span> ∪ <span class="lbl-c2">Math'</span>)</span><div><span class="text-[10px] text-slate-400 mr-1 font-mono" id="frac-b_or_mn">35/50</span><span class="text-xs font-bold text-teal-600 w-8 inline-block text-right" id="dec-b_or_mn">0.700</span></div></div>
+                    <div class="flex justify-between items-center border-b border-slate-200 pb-0.5"><span class="text-xs font-medium text-slate-700">P(<span class="lbl-r2">Girl</span> ∪ <span class="lbl-c1">Math</span>)</span><div><span class="text-[10px] text-slate-400 mr-1 font-mono" id="frac-g_or_m">40/50</span><span class="text-xs font-bold text-teal-600 w-8 inline-block text-right" id="dec-g_or_m">0.800</span></div></div>
+                    <div class="flex justify-between items-center border-b border-slate-200 pb-0.5"><span class="text-xs font-medium text-slate-700">P(<span class="lbl-r2">Girl</span> ∪ <span class="lbl-c2">Math'</span>)</span><div><span class="text-[10px] text-slate-400 mr-1 font-mono" id="frac-g_or_mn">30/50</span><span class="text-xs font-bold text-teal-600 w-8 inline-block text-right" id="dec-g_or_mn">0.600</span></div></div>
+                </div>
+
+                <!-- Conditional Probabilities -->
+                <div class="bg-slate-50 p-2 rounded-lg border border-slate-200 shadow-sm flex flex-col space-y-1">
+                    <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Conditional (|)</div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1">
+                        <div class="flex justify-between items-center border-b border-slate-200 pb-0.5"><span class="text-xs font-medium text-slate-700">P(<span class="lbl-c1">Math</span>|<span class="lbl-r1">Boy</span>)</span><div><span class="text-[10px] text-slate-400 mr-1 font-mono" id="frac-m_given_b">20/30</span><span class="text-xs font-bold text-teal-600 w-8 inline-block text-right" id="dec-m_given_b">0.667</span></div></div>
+                        <div class="flex justify-between items-center border-b border-slate-200 pb-0.5"><span class="text-xs font-medium text-slate-700">P(<span class="lbl-r1">Boy</span>|<span class="lbl-c1">Math</span>)</span><div><span class="text-[10px] text-slate-400 mr-1 font-mono" id="frac-b_given_m">20/35</span><span class="text-xs font-bold text-teal-600 w-8 inline-block text-right" id="dec-b_given_m">0.571</span></div></div>
+                        <div class="flex justify-between items-center border-b border-slate-200 pb-0.5"><span class="text-xs font-medium text-slate-700">P(<span class="lbl-c2">Math'</span>|<span class="lbl-r1">Boy</span>)</span><div><span class="text-[10px] text-slate-400 mr-1 font-mono" id="frac-mn_given_b">10/30</span><span class="text-xs font-bold text-teal-600 w-8 inline-block text-right" id="dec-mn_given_b">0.333</span></div></div>
+                        <div class="flex justify-between items-center border-b border-slate-200 pb-0.5"><span class="text-xs font-medium text-slate-700">P(<span class="lbl-r1">Boy</span>|<span class="lbl-c2">Math'</span>)</span><div><span class="text-[10px] text-slate-400 mr-1 font-mono" id="frac-b_given_mn">10/15</span><span class="text-xs font-bold text-teal-600 w-8 inline-block text-right" id="dec-b_given_mn">0.667</span></div></div>
+                        <div class="flex justify-between items-center border-b border-slate-200 pb-0.5"><span class="text-xs font-medium text-slate-700">P(<span class="lbl-c1">Math</span>|<span class="lbl-r2">Girl</span>)</span><div><span class="text-[10px] text-slate-400 mr-1 font-mono" id="frac-m_given_g">15/20</span><span class="text-xs font-bold text-teal-600 w-8 inline-block text-right" id="dec-m_given_g">0.750</span></div></div>
+                        <div class="flex justify-between items-center border-b border-slate-200 pb-0.5"><span class="text-xs font-medium text-slate-700">P(<span class="lbl-r2">Girl</span>|<span class="lbl-c1">Math</span>)</span><div><span class="text-[10px] text-slate-400 mr-1 font-mono" id="frac-g_given_m">15/35</span><span class="text-xs font-bold text-teal-600 w-8 inline-block text-right" id="dec-g_given_m">0.429</span></div></div>
+                        <div class="flex justify-between items-center border-b border-slate-200 pb-0.5"><span class="text-xs font-medium text-slate-700">P(<span class="lbl-c2">Math'</span>|<span class="lbl-r2">Girl</span>)</span><div><span class="text-[10px] text-slate-400 mr-1 font-mono" id="frac-mn_given_g">5/20</span><span class="text-xs font-bold text-teal-600 w-8 inline-block text-right" id="dec-mn_given_g">0.250</span></div></div>
+                        <div class="flex justify-between items-center border-b border-slate-200 pb-0.5"><span class="text-xs font-medium text-slate-700">P(<span class="lbl-r2">Girl</span>|<span class="lbl-c2">Math'</span>)</span><div><span class="text-[10px] text-slate-400 mr-1 font-mono" id="frac-g_given_mn">5/15</span><span class="text-xs font-bold text-teal-600 w-8 inline-block text-right" id="dec-g_given_mn">0.333</span></div></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        </div>
+    </div>
+
+    <script>
+        function updateCell(id, num, den) {
+            let fracEl = document.getElementById(`frac-${id}`);
+            let decEl = document.getElementById(`dec-${id}`);
+            
+            if (den === 0) {
+                fracEl.innerText = "0/0";
+                decEl.innerText = "0.000";
+            } else {
+                fracEl.innerText = `${num}/${den}`;
+                decEl.innerText = (num / den).toFixed(3);
+            }
+        }
+
+        function calculate() {
+            let bm = parseInt(document.getElementById('bm').value) || 0;
+            let bmn = parseInt(document.getElementById('bmn').value) || 0;
+            let gm = parseInt(document.getElementById('gm').value) || 0;
+            let gmn = parseInt(document.getElementById('gmn').value) || 0;
+
+            let totB = bm + bmn;
+            let totG = gm + gmn;
+            let totM = bm + gm;
+            let totMn = bmn + gmn;
+            let grandTot = totB + totG;
+
+            // Update Table Totals
+            document.getElementById('tot-b').innerText = totB;
+            document.getElementById('tot-g').innerText = totG;
+            document.getElementById('tot-m').innerText = totM;
+            document.getElementById('tot-mn').innerText = totMn;
+            document.getElementById('grand-tot').innerText = grandTot;
+
+            // Marginals
+            updateCell('b', totB, grandTot);
+            updateCell('g', totG, grandTot);
+            updateCell('m', totM, grandTot);
+            updateCell('mn', totMn, grandTot);
+
+            // Joints
+            updateCell('bm', bm, grandTot);
+            updateCell('bmn', bmn, grandTot);
+            updateCell('gm', gm, grandTot);
+            updateCell('gmn', gmn, grandTot);
+
+            // Unions: P(A U B) = P(A) + P(B) - P(A ∩ B)
+            updateCell('b_or_m', (totB + totM - bm), grandTot);
+            updateCell('b_or_mn', (totB + totMn - bmn), grandTot);
+            updateCell('g_or_m', (totG + totM - gm), grandTot);
+            updateCell('g_or_mn', (totG + totMn - gmn), grandTot);
+
+            // Conditionals
+            updateCell('m_given_b', bm, totB);
+            updateCell('mn_given_b', bmn, totB);
+            updateCell('m_given_g', gm, totG);
+            updateCell('mn_given_g', gmn, totG);
+
+            updateCell('b_given_m', bm, totM);
+            updateCell('g_given_m', gm, totM);
+            updateCell('b_given_mn', bmn, totMn);
+            updateCell('g_given_mn', gmn, totMn);
+        }
+        
+        function updateLabels() {
+            let r1 = document.getElementById('var-r1').value || 'A';
+            let r2 = document.getElementById('var-r2').value || "A'";
+            let c1 = document.getElementById('var-c1').value || 'B';
+            let c2 = document.getElementById('var-c2').value || "B'";
+
+            document.querySelectorAll('.lbl-r1').forEach(el => el.innerText = r1);
+            document.querySelectorAll('.lbl-r2').forEach(el => el.innerText = r2);
+            document.querySelectorAll('.lbl-c1').forEach(el => el.innerText = c1);
+            document.querySelectorAll('.lbl-c2').forEach(el => el.innerText = c2);
+        }
+        
+        function exportToCSV() {
+            let r1 = document.getElementById('var-r1').value || 'A';
+            let r2 = document.getElementById('var-r2').value || "A'";
+            let c1 = document.getElementById('var-c1').value || 'B';
+            let c2 = document.getElementById('var-c2').value || "B'";
+
+            const g = (id) => document.getElementById(id).innerText;
+            const v = (id) => document.getElementById(id).value;
+
+            // Generate an HTML table that Excel can render with full styling
+            let html = `
+            <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+            <head>
+                <meta charset="utf-8">
+                <style>
+                    .num { mso-number-format: "\\@"; text-align: center; font-family: monospace; }
+                    .dec { mso-number-format: "0.000"; text-align: center; font-weight: bold; }
+                    td { border: 1px solid #cbd5e1; padding: 5px; }
+                </style>
+            </head>
+            <body style="font-family: Arial, sans-serif;">
+                <table style="border-collapse: collapse; width: 100%;">
+                    
+                    <!-- DATA TABLE SECTION -->
+                    <tr style="background-color: #0f766e; color: white; text-align: center; font-weight: bold; font-size: 14pt;">
+                        <td colspan="4" style="padding: 10px; border: 1px solid #0f766e;">🎲 RAW DATA TABLE</td>
+                    </tr>
+                    <tr style="background-color: #f1f5f9; font-weight: bold; text-align: center; color: #334155;">
+                        <td></td>
+                        <td>${c1}</td>
+                        <td>${c2}</td>
+                        <td style="background-color: #ccfbf1; color: #0f766e;">Total</td>
+                    </tr>
+                    <tr style="text-align: center;">
+                        <td style="background-color: #f1f5f9; font-weight: bold; color: #334155;">${r1}</td>
+                        <td>${v('bm')}</td>
+                        <td>${v('bmn')}</td>
+                        <td style="background-color: #f0fdfa; font-weight: bold; color: #0f766e;">${g('tot-b')}</td>
+                    </tr>
+                    <tr style="text-align: center;">
+                        <td style="background-color: #f1f5f9; font-weight: bold; color: #334155;">${r2}</td>
+                        <td>${v('gm')}</td>
+                        <td>${v('gmn')}</td>
+                        <td style="background-color: #f0fdfa; font-weight: bold; color: #0f766e;">${g('tot-g')}</td>
+                    </tr>
+                    <tr style="text-align: center; font-weight: bold;">
+                        <td style="background-color: #ccfbf1; color: #0f766e;">Total</td>
+                        <td style="background-color: #f0fdfa; color: #0f766e;">${g('tot-m')}</td>
+                        <td style="background-color: #f0fdfa; color: #0f766e;">${g('tot-mn')}</td>
+                        <td style="background-color: #99f6e4; color: #115e59; font-size: 12pt;">${g('grand-tot')}</td>
+                    </tr>
+                    
+                    <tr><td colspan="4" style="border:none;"></td></tr>
+
+                    <!-- PROBABILITIES SECTION -->
+                    <tr style="background-color: #0f766e; color: white; text-align: center; font-weight: bold; font-size: 14pt;">
+                        <td colspan="4" style="padding: 10px; border: 1px solid #0f766e;">✨ CALCULATED PROBABILITIES</td>
+                    </tr>
+                    <tr style="background-color: #f1f5f9; font-weight: bold; text-align: center; color: #334155;">
+                        <td>Category</td>
+                        <td>Probability Formula</td>
+                        <td>Fraction</td>
+                        <td>Decimal</td>
+                    </tr>
+            `;
+
+            const row = (cat, formula, frac, dec, bg) => `
+                <tr style="background-color: ${bg};">
+                    <td style="font-weight: bold; color: #475569;">${cat}</td>
+                    <td style="font-style: italic; color: #1e293b;">${formula}</td>
+                    <td class="num" style="color: #64748b;">${frac}</td>
+                    <td class="dec" style="color: #0d9488;">${dec}</td>
+                </tr>
+            `;
+
+            // Marginals (white bg)
+            html += row('Marginal', `P(${r1})`, g('frac-b'), g('dec-b'), '#ffffff');
+            html += row('Marginal', `P(${r2})`, g('frac-g'), g('dec-g'), '#ffffff');
+            html += row('Marginal', `P(${c1})`, g('frac-m'), g('dec-m'), '#ffffff');
+            html += row('Marginal', `P(${c2})`, g('frac-mn'), g('dec-mn'), '#ffffff');
+
+            // Joints (light gray bg)
+            html += row('Joint (∩)', `P(${r1} ∩ ${c1})`, g('frac-bm'), g('dec-bm'), '#f8fafc');
+            html += row('Joint (∩)', `P(${r1} ∩ ${c2})`, g('frac-bmn'), g('dec-bmn'), '#f8fafc');
+            html += row('Joint (∩)', `P(${r2} ∩ ${c1})`, g('frac-gm'), g('dec-gm'), '#f8fafc');
+            html += row('Joint (∩)', `P(${r2} ∩ ${c2})`, g('frac-gmn'), g('dec-gmn'), '#f8fafc');
+
+            // Unions (white bg)
+            html += row('Union (∪)', `P(${r1} ∪ ${c1})`, g('frac-b_or_m'), g('dec-b_or_m'), '#ffffff');
+            html += row('Union (∪)', `P(${r1} ∪ ${c2})`, g('frac-b_or_mn'), g('dec-b_or_mn'), '#ffffff');
+            html += row('Union (∪)', `P(${r2} ∪ ${c1})`, g('frac-g_or_m'), g('dec-g_or_m'), '#ffffff');
+            html += row('Union (∪)', `P(${r2} ∪ ${c2})`, g('frac-g_or_mn'), g('dec-g_or_mn'), '#ffffff');
+
+            // Conditionals (light gray bg)
+            html += row('Conditional (|)', `P(${c1} | ${r1})`, g('frac-m_given_b'), g('dec-m_given_b'), '#f8fafc');
+            html += row('Conditional (|)', `P(${r1} | ${c1})`, g('frac-b_given_m'), g('dec-b_given_m'), '#f8fafc');
+            html += row('Conditional (|)', `P(${c2} | ${r1})`, g('frac-mn_given_b'), g('dec-mn_given_b'), '#f8fafc');
+            html += row('Conditional (|)', `P(${r1} | ${c2})`, g('frac-b_given_mn'), g('dec-b_given_mn'), '#f8fafc');
+            html += row('Conditional (|)', `P(${c1} | ${r2})`, g('frac-m_given_g'), g('dec-m_given_g'), '#f8fafc');
+            html += row('Conditional (|)', `P(${r2} | ${c1})`, g('frac-g_given_m'), g('dec-g_given_m'), '#f8fafc');
+            html += row('Conditional (|)', `P(${c2} | ${r2})`, g('frac-mn_given_g'), g('dec-mn_given_g'), '#f8fafc');
+            html += row('Conditional (|)', `P(${r2} | ${c2})`, g('frac-g_given_mn'), g('dec-g_given_mn'), '#f8fafc');
+
+            html += `</table></body></html>`;
+
+            // Export as true Excel MIME type
+            const blob = new Blob(['\uFEFF' + html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'Contingency_Report.xls';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        calculate();
+    </script>
+</body>
+</html>

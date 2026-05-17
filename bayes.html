@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bayes' Theorem Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans p-2 md:p-6 flex flex-col items-center h-screen overflow-hidden">
+    <a href="index.html" id="back-btn" class="absolute top-4 left-4 bg-slate-200 text-slate-700 px-3 py-1 rounded hover:bg-slate-300 transition text-sm font-semibold flex items-center gap-2 z-50">&larr; Back to Dashboard</a>
+    <script>
+        try { if (window.self !== window.top) document.getElementById('back-btn').style.display = 'none'; } 
+        catch (e) { document.getElementById('back-btn').style.display = 'none'; }
+    </script>
+    <div class="max-w-4xl w-full bg-white p-4 md:p-6 rounded-xl shadow border border-slate-200 flex flex-col h-full min-h-0">
+        <h1 class="text-xl md:text-2xl font-bold text-indigo-600 mb-1 flex-shrink-0">General Bayes' Theorem Calculator</h1>
+        <p class="text-xs md:text-sm text-slate-500 mb-4 flex-shrink-0">Calculate conditional probabilities using the standard Bayes' rule: P(A|B) = [P(B|A) × P(A)] / P(B).</p>
+
+        <div class="mb-4 p-3 md:p-4 bg-indigo-50 border border-indigo-200 rounded-lg flex items-center gap-4 flex-shrink-0">
+            <label class="font-bold text-indigo-800 text-sm md:text-base">What do you want to calculate?</label>
+            <select id="calc-mode" class="p-1.5 md:p-2 border border-indigo-300 rounded focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-indigo-700 text-sm md:text-base" onchange="updateMode()">
+                <option value="A_given_B">Find P(A | B)</option>
+                <option value="B_given_A">Find P(B | A)</option>
+            </select>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 flex-1 min-h-0">
+            <!-- INPUTS -->
+            <div class="space-y-4 overflow-y-auto pr-2">
+                <div>
+                    <label class="flex justify-between text-sm font-bold text-slate-700 mb-1">
+                        <span>Probability of Event A: <span class="text-blue-600 font-mono">P(A)</span></span> 
+                    </label>
+                    <input type="number" id="p-a" min="0" max="1" step="0.01" value="0.10" class="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-400 outline-none font-mono" oninput="calcBayes()">
+                </div>
+                
+                <div>
+                    <label class="flex justify-between text-sm font-bold text-slate-700 mb-1">
+                        <span>Probability of Event B: <span class="text-rose-600 font-mono">P(B)</span></span> 
+                    </label>
+                    <input type="number" id="p-b" min="0" max="1" step="0.01" value="0.05" class="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-rose-400 outline-none font-mono" oninput="calcBayes()">
+                </div>
+
+                <hr class="border-slate-200">
+
+                <div>
+                    <label class="flex justify-between text-sm font-bold text-slate-700 mb-1">
+                        <span>Conditional Probability: <span id="lbl-cond" class="text-emerald-600 font-mono">P(B | A)</span></span> 
+                    </label>
+                    <input type="number" id="p-cond" min="0" max="1" step="0.01" value="0.07" class="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-emerald-400 outline-none font-mono" oninput="calcBayes()">
+                    <p id="desc-cond" class="text-xs text-slate-500 mt-1">The probability of B occurring given that A has occurred.</p>
+                </div>
+                
+                <div id="error-msg" class="hidden bg-red-100 border border-red-300 text-red-700 px-4 py-3 rounded relative text-sm" role="alert">
+                    <strong class="font-bold">Invalid Probabilities!</strong>
+                    <span class="block sm:inline"> The inputs result in a probability greater than 1, meaning these events mathematically cannot coexist with these values.</span>
+                </div>
+            </div>
+
+            <!-- OUTPUT / FORMULA -->
+            <div class="bg-slate-800 text-white p-4 md:p-6 rounded-lg shadow-inner flex flex-col justify-center h-full">
+                <div class="text-xs font-bold text-indigo-300 uppercase tracking-widest mb-2">Result</div>
+                <div class="text-sm text-slate-300 mb-4">Calculated Posterior Probability: <b id="result-label" class="text-lg">P(A | B)</b></div>
+                
+                <div class="text-5xl font-black text-indigo-400 mb-6" id="posterior">0.140</div>
+                
+                <div class="text-xs font-mono text-slate-400 mt-auto pt-4 border-t border-slate-600 space-y-3">
+                    <div id="formula-text" class="text-sm">
+                        P(A | B) = [ P(A) × P(B | A) ] ÷ P(B)
+                    </div>
+                    <div class="text-sm text-indigo-200 bg-slate-700 p-3 rounded border border-slate-600 shadow-inner">
+                        = [ <span id="val-1" class="text-blue-300">0.10</span> × <span id="val-2" class="text-emerald-300">0.07</span> ] ÷ <span id="val-3" class="text-rose-300">0.05</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateMode() {
+            const mode = document.getElementById('calc-mode').value;
+            const lblCond = document.getElementById('lbl-cond');
+            const descCond = document.getElementById('desc-cond');
+            const resultLabel = document.getElementById('result-label');
+            const formulaText = document.getElementById('formula-text');
+
+            if (mode === 'A_given_B') {
+                lblCond.innerText = "P(B | A)";
+                descCond.innerText = "The probability of B occurring given that A has occurred.";
+                resultLabel.innerText = "P(A | B)";
+                formulaText.innerHTML = "P(A | B) = [ P(B | A) × P(A) ] ÷ P(B)";
+            } else {
+                lblCond.innerText = "P(A | B)";
+                descCond.innerText = "The probability of A occurring given that B has occurred.";
+                resultLabel.innerText = "P(B | A)";
+                formulaText.innerHTML = "P(B | A) = [ P(A | B) × P(B) ] ÷ P(A)";
+            }
+            calcBayes();
+        }
+
+        function calcBayes() {
+            let pA = parseFloat(document.getElementById('p-a').value) || 0;
+            let pB = parseFloat(document.getElementById('p-b').value) || 0;
+            let pCond = parseFloat(document.getElementById('p-cond').value) || 0;
+            const mode = document.getElementById('calc-mode').value;
+            
+            let result = 0;
+            let errorMsg = document.getElementById('error-msg');
+            let resultDisplay = document.getElementById('posterior');
+
+            if (mode === 'A_given_B') {
+                // P(A|B) = P(B|A) * P(A) / P(B)
+                if (pB > 0) {
+                    result = (pCond * pA) / pB;
+                }
+                
+                document.getElementById('val-1').innerText = pCond.toFixed(3);
+                document.getElementById('val-2').innerText = pA.toFixed(3);
+                document.getElementById('val-3').innerText = pB.toFixed(3);
+
+                // Styling colors to match inputs
+                document.getElementById('val-1').className = "text-emerald-300";
+                document.getElementById('val-2').className = "text-blue-300";
+                document.getElementById('val-3').className = "text-rose-300";
+
+            } else {
+                // P(B|A) = P(A|B) * P(B) / P(A)
+                if (pA > 0) {
+                    result = (pCond * pB) / pA;
+                }
+
+                document.getElementById('val-1').innerText = pCond.toFixed(3);
+                document.getElementById('val-2').innerText = pB.toFixed(3);
+                document.getElementById('val-3').innerText = pA.toFixed(3);
+
+                // Styling colors to match inputs
+                document.getElementById('val-1').className = "text-emerald-300";
+                document.getElementById('val-2').className = "text-rose-300";
+                document.getElementById('val-3').className = "text-blue-300";
+            }
+
+            // Validation for mathematically impossible situations
+            if (result > 1) {
+                errorMsg.classList.remove('hidden');
+                resultDisplay.innerText = "Err";
+                resultDisplay.classList.add("text-red-500");
+                resultDisplay.classList.remove("text-indigo-400");
+            } else {
+                errorMsg.classList.add('hidden');
+                // Format to 3 decimal places
+                resultDisplay.innerText = result.toFixed(3);
+                resultDisplay.classList.remove("text-red-500");
+                resultDisplay.classList.add("text-indigo-400");
+            }
+        }
+
+        // Initialize display
+        updateMode();
+    </script>
+</body>
+</html>

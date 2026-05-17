@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Probability Tree Builder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .tree-node {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+        }
+        .tree-final {
+            position: absolute;
+            transform: translateY(-50%);
+            z-index: 10;
+        }
+        .tree-line {
+            stroke: #cbd5e1;
+            stroke-width: 3px;
+            transition: all 0.3s ease;
+        }
+        /* Custom scrollbar for the canvas */
+        .canvas-container::-webkit-scrollbar { height: 8px; width: 8px; }
+        .canvas-container::-webkit-scrollbar-track { background: #f1f5f9; rounded-lg; }
+        .canvas-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans p-2 flex flex-col items-center h-screen overflow-hidden">
+    <a href="index.html" id="back-btn" class="absolute top-2 left-2 bg-slate-200 text-slate-700 px-2 py-1 rounded hover:bg-slate-300 transition text-xs font-semibold flex items-center gap-1 z-50">&larr; Back</a>
+    <script>
+        try { if (window.self !== window.top) document.getElementById('back-btn').style.display = 'none'; } 
+        catch (e) { document.getElementById('back-btn').style.display = 'none'; }
+    </script>
+    <div class="w-full text-center mb-2 flex-shrink-0 pt-1">
+        <h1 class="text-xl font-bold text-green-600 mb-1">Probability Tree Builder</h1>
+        <p class="text-slate-500 text-xs">Add outcomes, set probabilities, and choose sequential trials.</p>
+    </div>
+
+    <div class="max-w-7xl w-full grid grid-cols-1 md:grid-cols-3 gap-3 flex-1 min-h-0">
+        
+        <!-- CONTROLS PANEL -->
+        <div class="col-span-1 bg-white p-4 rounded-xl shadow-lg border border-slate-200 flex flex-col h-full min-h-0">
+            <div class="flex justify-between items-center mb-3 border-b pb-1 flex-shrink-0">
+                <h2 class="text-lg font-bold text-slate-700">Tree Settings</h2>
+                <button onclick="exportToExcel()" class="bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200 px-2 py-1 rounded text-[10px] font-bold transition flex items-center gap-1 shadow-sm hover:shadow-md">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    Export
+                </button>
+            </div>
+            
+            <div class="mb-4 flex-shrink-0">
+                <label class="block text-xs font-bold text-slate-700 mb-1">Number of Trials (Stages)</label>
+                <div class="flex items-center gap-2">
+                    <input type="number" id="stages-input" min="1" max="7" value="2" class="w-16 p-1 border border-slate-300 rounded focus:ring-2 focus:ring-green-400 outline-none font-bold text-center text-green-700 shadow-sm" onchange="updateSettings()" onkeyup="if(event.key === 'Enter') updateSettings()">
+                    <span class="text-[10px] text-slate-500 leading-tight">Max 7</span>
+                </div>
+            </div>
+
+            <div class="mb-2 flex justify-between items-end flex-shrink-0">
+                <label class="block text-xs font-bold text-slate-700">Event Outcomes</label>
+                <button onclick="addOutcome()" class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded hover:bg-green-200 font-bold">+ Add</button>
+            </div>
+
+            <div id="outcomes-container" class="space-y-2 mb-3 flex-1 overflow-y-auto pr-1">
+                <!-- Outcomes will be injected here by JS -->
+            </div>
+
+            <div class="mt-auto flex-shrink-0">
+                <!-- Validation Warning -->
+                <div id="warning-banner" class="hidden bg-rose-50 border border-rose-200 text-rose-700 px-3 py-2 rounded text-[10px] mb-2">
+                    <strong class="font-bold">Check Probabilities:</strong>
+                    <span class="block">Sum must equal 1.0. Current: <span id="sum-display" class="font-mono font-bold"></span></span>
+                </div>
+                
+                <button onclick="normalizeProbabilities()" class="w-full bg-slate-100 text-slate-600 border border-slate-300 px-3 py-1.5 rounded font-semibold hover:bg-slate-200 transition text-xs">
+                    Auto-Balance to 1.0
+                </button>
+            </div>
+        </div>
+
+        <!-- TREE CANVAS -->
+        <div class="col-span-1 md:col-span-2 bg-white rounded-xl shadow-lg border border-slate-200 overflow-auto relative canvas-container h-full">
+            <div id="tree-area" class="relative min-w-[500px] w-full h-full" style="transform: none;">
+                <!-- SVG Lines -->
+                <svg id="tree-svg" class="absolute top-0 left-0 w-full h-full pointer-events-none"></svg>
+                <!-- HTML Nodes -->
+                <div id="tree-nodes" class="absolute top-0 left-0 w-full h-full pointer-events-none"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Default State
+        let stages = 2;
+        let outcomes = [
+            { id: 1, name: 'Red', p: 0.4, colorClass: 'border-rose-500 text-rose-600' },
+            { id: 2, name: 'Blue', p: 0.6, colorClass: 'border-blue-500 text-blue-600' }
+        ];
+        
+        const palette = [
+            'border-rose-500 text-rose-600', 
+            'border-blue-500 text-blue-600', 
+            'border-emerald-500 text-emerald-600', 
+            'border-amber-500 text-amber-600',
+            'border-purple-500 text-purple-600'
+        ];
+
+        // --- UI & STATE MANAGEMENT ---
+
+        function renderOutcomesUI() {
+            const container = document.getElementById('outcomes-container');
+            container.innerHTML = '';
+
+            outcomes.forEach((out, index) => {
+                container.innerHTML += `
+                    <div class="flex items-center gap-1.5 bg-slate-50 p-1.5 rounded border border-slate-200">
+                        <div class="w-2.5 h-2.5 rounded-full ${out.colorClass.split(' ')[0].replace('border-', 'bg-')}"></div>
+                        <input type="text" value="${out.name}" onchange="updateOutcome(${index}, 'name', this.value)" class="flex-1 w-16 p-1 border rounded text-xs focus:ring-1 outline-none font-semibold">
+                        <input type="number" step="0.01" min="0" max="1" value="${out.p}" onchange="updateOutcome(${index}, 'p', this.value)" class="w-16 p-1 border rounded text-xs font-mono text-center focus:ring-1 outline-none">
+                        ${outcomes.length > 2 ? `<button onclick="removeOutcome(${index})" class="text-slate-400 hover:text-rose-500 font-bold px-1.5 text-xs">&times;</button>` : `<div class="w-4"></div>`}
+                    </div>
+                `;
+            });
+
+            validateProbabilities();
+            drawTree();
+        }
+
+        function updateSettings() {
+            let val = parseInt(document.getElementById('stages-input').value);
+            
+            // Validation
+            if (isNaN(val) || val < 1) {
+                val = 1;
+                document.getElementById('stages-input').value = 1;
+            }
+            // Cap at 7 to prevent DOM overload and freezing
+            if (val > 7) {
+                val = 7;
+                document.getElementById('stages-input').value = 7;
+                alert("Stages are limited to 7 to prevent the browser from crashing due to exponential branch growth.");
+            }
+            
+            stages = val;
+            drawTree();
+        }
+
+        function updateOutcome(index, field, value) {
+            if (field === 'p') {
+                value = parseFloat(value);
+                if (isNaN(value) || value < 0) value = 0;
+            }
+            outcomes[index][field] = value;
+            renderOutcomesUI();
+        }
+
+        function addOutcome() {
+            if (outcomes.length >= 5) {
+                alert("Maximum 5 outcomes allowed for visual clarity.");
+                return;
+            }
+            const color = palette[outcomes.length % palette.length];
+            outcomes.push({ id: Date.now(), name: `Event ${outcomes.length + 1}`, p: 0.1, colorClass: color });
+            renderOutcomesUI();
+        }
+
+        function removeOutcome(index) {
+            if (outcomes.length <= 2) return; // Min 2 outcomes
+            outcomes.splice(index, 1);
+            
+            // Re-assign colors
+            outcomes.forEach((o, i) => o.colorClass = palette[i % palette.length]);
+            renderOutcomesUI();
+        }
+
+        function normalizeProbabilities() {
+            let total = outcomes.reduce((sum, o) => sum + o.p, 0);
+            if (total === 0) {
+                outcomes.forEach(o => o.p = parseFloat((1 / outcomes.length).toFixed(3)));
+            } else {
+                let runningSum = 0;
+                for(let i=0; i<outcomes.length - 1; i++) {
+                    let newP = parseFloat((outcomes[i].p / total).toFixed(3));
+                    outcomes[i].p = newP;
+                    runningSum += newP;
+                }
+                // The last element absorbs any rounding errors to perfectly hit 1.000
+                outcomes[outcomes.length - 1].p = parseFloat((1.000 - runningSum).toFixed(3));
+            }
+            renderOutcomesUI();
+        }
+
+        function validateProbabilities() {
+            let total = outcomes.reduce((sum, o) => sum + o.p, 0);
+            const banner = document.getElementById('warning-banner');
+            const sumDisplay = document.getElementById('sum-display');
+            
+            sumDisplay.innerText = total.toFixed(3);
+            // Tightened the threshold so even a 0.001 deviation warns the user
+            if (Math.abs(total - 1.0) > 0.0001) {
+                banner.classList.remove('hidden');
+            } else {
+                banner.classList.add('hidden');
+            }
+        }
+
+        // --- TREE DRAWING ENGINE ---
+
+        function drawTree() {
+            const area = document.getElementById('tree-area');
+            const svg = document.getElementById('tree-svg');
+            const nodesDiv = document.getElementById('tree-nodes');
+            const container = area.parentElement;
+
+            // Calculate Required Canvas Size
+            let leaves = Math.pow(outcomes.length, stages);
+            let leafHeight = stages >= 4 ? 30 : 50; 
+            let requiredHeight = Math.max(container.clientHeight, leaves * leafHeight);
+            
+            let requiredWidth = Math.max(container.clientWidth, (stages * 130) + 180); 
+
+            area.style.height = requiredHeight + 'px';
+            area.style.minWidth = requiredWidth + 'px';
+            area.style.width = '100%'; // reset any fixed width
+            area.style.transform = 'none'; // Ensure scaling is removed
+
+            let W = area.clientWidth || requiredWidth;
+            let H = requiredHeight;
+
+            let colWidth = (W - 150) / stages; 
+            let startX = 40;
+
+            let svgHtml = '';
+            let nodesHtml = '';
+
+            // Draw Root Node
+            nodesHtml += `<div class="tree-node bg-slate-800 text-white text-xs font-bold px-3 py-1 rounded shadow" style="left: ${startX}px; top: ${H/2}px;">Start</div>`;
+
+            // Recursive function to draw branches
+            function buildBranch(level, parentX, parentY, yMin, yMax, pathProb, pathName) {
+                let sliceHeight = (yMax - yMin) / outcomes.length;
+
+                for (let i = 0; i < outcomes.length; i++) {
+                    let out = outcomes[i];
+                    let currentY = yMin + (sliceHeight * i) + (sliceHeight / 2);
+                    let currentX = startX + (level * colWidth);
+                    let currentProb = pathProb * out.p;
+                    let currentName = pathName ? `${pathName}, ${out.name}` : out.name;
+
+                    // 1. Draw connecting line
+                    svgHtml += `<line x1="${parentX}" y1="${parentY}" x2="${currentX}" y2="${currentY}" class="tree-line"/>`;
+
+                    // 2. Draw the Node Box
+                    nodesHtml += `
+                        <div class="tree-node bg-white border ${out.colorClass} px-2 py-0.5 rounded shadow-sm text-center min-w-[50px]">
+                            <div class="text-[10px] text-slate-500 font-bold truncate max-w-[70px]">${out.name}</div>
+                            <div class="font-bold text-xs">${out.p.toFixed(2)}</div>
+                        </div>
+                    `;
+
+                    // 3. Recurse or draw final text
+                    if (level < stages) {
+                        buildBranch(level + 1, currentX, currentY, yMin + (sliceHeight * i), yMin + (sliceHeight * (i+1)), currentProb, currentName);
+                    } else {
+                        nodesHtml += `
+                            <div class="tree-final flex items-center gap-1.5" style="left: ${currentX + 40}px; top: ${currentY}px;">
+                                <div class="font-bold text-slate-700 whitespace-nowrap">
+                                    <span class="text-[9px] text-slate-400 mr-1 border border-slate-200 bg-slate-50 px-1 rounded truncate max-w-[80px] inline-block align-bottom" title="Path: ${currentName}">${currentName}</span>
+                                    = <span class="text-xs bg-slate-100 px-1 py-0.5 rounded ml-0.5">${currentProb.toFixed(3)}</span>
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+            }
+
+            // Start recursion
+            if(outcomes.length > 0) {
+                buildBranch(1, startX, H/2, 0, H, 1, '');
+            }
+
+            svg.innerHTML = svgHtml;
+            nodesDiv.innerHTML = nodesHtml;
+        }
+
+        // Handle window resize to redraw tree bounds
+        window.addEventListener('resize', () => {
+            requestAnimationFrame(drawTree);
+        });
+
+        function generatePaths(level, pathProb, pathName, results) {
+            for (let i = 0; i < outcomes.length; i++) {
+                let out = outcomes[i];
+                let currentProb = pathProb * out.p;
+                let currentName = pathName ? `${pathName}, ${out.name}` : out.name;
+                
+                if (level < stages) {
+                    generatePaths(level + 1, currentProb, currentName, results);
+                } else {
+                    results.push({ name: currentName, p: currentProb });
+                }
+            }
+        }
+
+        function exportToExcel() {
+            let results = [];
+            if(outcomes.length > 0 && stages > 0) {
+                generatePaths(1, 1, '', results);
+            }
+
+            let html = `
+            <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+            <head>
+                <meta charset="utf-8">
+                <style>
+                    td { border: 1px solid #cbd5e1; padding: 5px; }
+                    .dec { mso-number-format: "0.000"; text-align: center; font-weight: bold; color: #0d9488; }
+                </style>
+            </head>
+            <body style="font-family: Arial, sans-serif;">
+                <table style="border-collapse: collapse; width: 100%;">
+                    <!-- Header -->
+                    <tr style="background-color: #0f766e; color: white; text-align: center; font-weight: bold; font-size: 14pt;">
+                        <td colspan="2" style="padding: 10px; border: 1px solid #0f766e;">🌳 PROBABILITY TREE OUTCOMES</td>
+                    </tr>
+                    <tr style="background-color: #f1f5f9; font-weight: bold; text-align: center; color: #334155;">
+                        <td style="width: 70%;">Event Path (Outcome)</td>
+                        <td style="width: 30%;">Final Probability</td>
+                    </tr>
+            `;
+
+            let sumProb = 0;
+            results.forEach((r, idx) => {
+                let bg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
+                sumProb += r.p;
+                html += `
+                <tr style="background-color: ${bg};">
+                    <td style="font-weight: bold; color: #475569;">${r.name}</td>
+                    <td class="dec">${r.p.toFixed(3)}</td>
+                </tr>
+                `;
+            });
+
+            // Total row
+            html += `
+                <tr style="text-align: center; font-weight: bold;">
+                    <td style="background-color: #ccfbf1; color: #0f766e; text-align: right; padding-right: 15px;">Total Probability</td>
+                    <td style="background-color: #99f6e4; color: #115e59; font-size: 12pt;" class="dec">${sumProb.toFixed(3)}</td>
+                </tr>
+            </table></body></html>
+            `;
+
+            const blob = new Blob(['\uFEFF' + html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'Probability_Tree_Outcomes.xls';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Initial render
+        renderOutcomesUI();
+
+    </script>
+</body>
+</html>
