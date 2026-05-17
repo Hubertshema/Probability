@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Probability Toolkit</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* A subtle pattern for the welcome screen background */
+        .bg-pattern {
+            background-color: #f8fafc;
+            background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 font-sans overflow-hidden">
+
+    <div class="flex flex-col md:flex-row h-screen">
+
+        <!-- SIDEBAR NAVIGATION -->
+        <aside class="w-full md:w-72 bg-slate-900 text-slate-300 flex flex-col shadow-2xl z-20 flex-shrink-0">
+            <!-- Header -->
+            <div class="p-6 border-b border-slate-800">
+                <div class="text-xs font-bold text-indigo-400 tracking-widest uppercase mb-1">MA80443</div>
+                <h1 class="text-2xl font-black text-white tracking-tight">Probability Toolkit</h1>
+            </div>
+
+            <!-- Links -->
+            <nav class="flex-1 overflow-y-auto p-4 space-y-2">
+                <button onclick="goHome()" id="nav-home"
+                    class="w-full nav-link bg-indigo-600 text-white flex items-center gap-3 p-3 rounded-lg transition-colors text-left">
+                    <span class="text-xl">🏠</span>
+                    <span class="font-medium">Home Dashboard</span>
+                </button>
+
+                <div class="pt-4 pb-2">
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-widest px-3">Interactive Tools</p>
+                </div>
+
+                <a href="Simulator.html" target="app-frame" onclick="setActive(this)"
+                    class="nav-link hover:bg-slate-800 hover:text-white text-slate-300 flex items-center gap-3 p-3 rounded-lg transition-colors">
+                    <span class="text-xl">🎲</span>
+                    <span class="font-medium">Probability Simulator</span>
+                </a>
+
+                <a href="Contigency.html" target="app-frame" onclick="setActive(this)"
+                    class="nav-link hover:bg-slate-800 hover:text-white text-slate-300 flex items-center gap-3 p-3 rounded-lg transition-colors">
+                    <span class="text-xl">📊</span>
+                    <span class="font-medium">Contingency Tables</span>
+                </a>
+
+                <a href="tree.html" target="app-frame" onclick="setActive(this)"
+                    class="nav-link hover:bg-slate-800 hover:text-white text-slate-300 flex items-center gap-3 p-3 rounded-lg transition-colors">
+                    <span class="text-xl">🌿</span>
+                    <span class="font-medium">Tree Diagram Builder</span>
+                </a>
+
+                <a href="venn.html" target="app-frame" onclick="setActive(this)"
+                    class="nav-link hover:bg-slate-800 hover:text-white text-slate-300 flex items-center gap-3 p-3 rounded-lg transition-colors">
+                    <span class="text-xl">⭕</span>
+                    <span class="font-medium">Venn & Inclusive Events</span>
+                </a>
+
+                <a href="bayes.html" target="app-frame" onclick="setActive(this)"
+                    class="nav-link hover:bg-slate-800 hover:text-white text-slate-300 flex items-center gap-3 p-3 rounded-lg transition-colors">
+                    <span class="text-xl">🩺</span>
+                    <span class="font-medium">Bayes' Theorem</span>
+                </a>
+            </nav>
+
+            <!-- Footer -->
+            <div class="p-4 border-t border-slate-800 text-xs text-slate-500 text-center">
+                Elementary Probability
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="flex-1 relative h-full bg-slate-50">
+
+            <!-- Welcome Screen (Visible by default) -->
+            <div id="welcome-screen"
+                class="absolute inset-0 flex flex-col lg:flex-row items-center justify-center p-6 md:p-12 gap-8 md:gap-12 bg-pattern z-0 overflow-y-auto">
+                <!-- Left Info column -->
+                <div class="flex-1 text-center lg:text-left max-w-xl flex flex-col justify-center flex-shrink-0">
+                    <div
+                        class="inline-block bg-white text-indigo-800 font-bold px-4 py-2 rounded-full text-xs md:text-sm uppercase tracking-widest mb-4 md:mb-6 border border-slate-200 shadow-sm self-center lg:self-start">
+                        Statistics and Probability
+                    </div>
+                    <h2
+                        class="text-3xl md:text-5xl font-black text-slate-800 mb-4 md:mb-6 tracking-tight leading-tight">
+                        <span class="text-indigo-600">Elementary Probability</span>
+                    </h2>
+                    <p class="text-sm md:text-base text-slate-600 leading-relaxed mb-6 md:mb-8">
+                        Welcome to your interactive study toolkit! Select any application from the sidebar on the left
+                        to explore counting principles, theoretical vs experimental probability, and conditional rules.
+                    </p>
+                    <div
+                        class="bg-indigo-50 border border-indigo-100 rounded-xl p-4 flex items-center gap-3 self-center lg:self-start">
+                        <span class="text-2xl animate-bounce">👈</span>
+                        <div class="text-left">
+                            <div class="font-bold text-indigo-900 text-sm">Interactive Sidebar</div>
+                            <div class="text-xs text-indigo-700">Click any application to launch the simulator</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Interactive Canvas Column -->
+                <div class="w-full max-w-[420px] flex-shrink-0 flex flex-col items-center">
+                    <div
+                        class="w-full bg-white p-4 rounded-2xl shadow-xl border border-slate-200 flex flex-col items-center relative group">
+                        <div
+                            class="absolute top-3 left-3 bg-indigo-50 text-indigo-600 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                            3D Interactive Probability Die</div>
+                        <div id="die-roll-status"
+                            class="text-xs text-indigo-500 mb-2 mt-4 font-bold text-center animate-pulse select-none">🎲
+                            CLICK THE DIE TO ROLL! 🎲</div>
+                        <canvas id="galton-canvas" width="380" height="340"
+                            class="bg-slate-900 rounded-xl cursor-pointer shadow-inner w-full max-w-[380px] h-[340px]"></canvas>
+                        <div class="flex justify-between w-full mt-3 text-xs text-slate-500 font-medium">
+                            <span id="die-result-text" class="text-slate-700 font-bold">Rolled Face: <span
+                                    class="text-indigo-600 text-sm font-black">-</span></span>
+                            <button onclick="triggerDieRoll()"
+                                class="hover:text-indigo-600 font-bold transition flex items-center gap-1">🎲 Roll
+                                Die</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Iframe (Loads the HTML files, hidden until a link is clicked) -->
+            <iframe name="app-frame" id="app-frame"
+                class="absolute inset-0 w-full h-full border-none z-10 hidden bg-slate-50"></iframe>
+
+        </main>
+    </div>
+
+    <script>
+        // Manages the active state styling in the sidebar
+        window.setActive = function (clickedEl) {
+            // Remove active styles from all links
+            document.querySelectorAll('.nav-link').forEach(el => {
+                el.classList.remove('bg-indigo-600', 'text-white');
+                el.classList.add('hover:bg-slate-800', 'text-slate-300');
+            });
+
+            // Add active style to the clicked link
+            clickedEl.classList.add('bg-indigo-600', 'text-white');
+            clickedEl.classList.remove('hover:bg-slate-800', 'text-slate-300');
+
+            // If it's not the home button, show the iframe
+            if (clickedEl.id !== 'nav-home') {
+                document.getElementById('app-frame').classList.remove('hidden');
+                document.getElementById('welcome-screen').classList.add('hidden');
+                localStorage.setItem('activeTool', clickedEl.getAttribute('href'));
+            } else {
+                localStorage.setItem('activeTool', 'home');
+            }
+        };
+
+        // Resets the view back to the welcome screen
+        window.goHome = function () {
+            const frame = document.getElementById('app-frame');
+            frame.src = "about:blank"; // Clear iframe content
+            frame.classList.add('hidden');
+            document.getElementById('welcome-screen').classList.remove('hidden');
+
+            // Set home button to active
+            window.setActive(document.getElementById('nav-home'));
+        };
+
+        // On page reload, restore the last active tool
+        window.addEventListener('DOMContentLoaded', () => {
+            const activeTool = localStorage.getItem('activeTool');
+            if (activeTool && activeTool !== 'home') {
+                const activeLink = document.querySelector(`.nav-link[href="${activeTool}"]`);
+                if (activeLink) {
+                    document.getElementById('app-frame').src = activeTool;
+                    window.setActive(activeLink);
+                }
+            } else {
+                window.goHome();
+            }
+
+            // Initialize 3D Die Simulation
+            init3DDie();
+        });
+
+        // --- 3D INTERACTIVE DIE ---
+        function init3DDie() {
+            const canvas = document.getElementById('galton-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+
+            const size = 52;
+            const vertices = [
+                { x: -size, y: -size, z: -size }, // 0
+                { x: size, y: -size, z: -size }, // 1
+                { x: size, y: size, z: -size }, // 2
+                { x: -size, y: size, z: -size }, // 3
+                { x: -size, y: -size, z: size }, // 4
+                { x: size, y: -size, z: size }, // 5
+                { x: size, y: size, z: size }, // 6
+                { x: -size, y: size, z: size }  // 7
+            ];
+
+            // Define the 6 faces. Each face has its own color, indices, pips, and target angles for snaps.
+            const faces = [
+                {
+                    val: 1,
+                    indices: [4, 5, 6, 7], // +Z (Front)
+                    color: 'rgba(59, 130, 246, 0.9)', // Blue
+                    pips: [{ x: 0, y: 0, z: size }],
+                    targetX: 0, targetY: 0
+                },
+                {
+                    val: 6,
+                    indices: [1, 0, 3, 2], // -Z (Back)
+                    color: 'rgba(30, 41, 59, 0.9)', // Slate
+                    pips: [
+                        { x: -22, y: -22, z: -size }, { x: 22, y: -22, z: -size },
+                        { x: -22, y: 0, z: -size }, { x: 22, y: 0, z: -size },
+                        { x: -22, y: 22, z: -size }, { x: 22, y: 22, z: -size }
+                    ],
+                    targetX: 0, targetY: Math.PI
+                },
+                {
+                    val: 3,
+                    indices: [5, 1, 2, 6], // +X (Right)
+                    color: 'rgba(16, 185, 129, 0.9)', // Green
+                    pips: [
+                        { x: size, y: -22, z: -22 },
+                        { x: size, y: 0, z: 0 },
+                        { x: size, y: 22, z: 22 }
+                    ],
+                    targetX: 0, targetY: -Math.PI / 2
+                },
+                {
+                    val: 4,
+                    indices: [0, 4, 7, 3], // -X (Left)
+                    color: 'rgba(245, 158, 11, 0.9)', // Orange
+                    pips: [
+                        { x: -size, y: -22, z: -22 }, { x: -size, y: 22, z: -22 },
+                        { x: -size, y: -22, z: 22 }, { x: -size, y: 22, z: 22 }
+                    ],
+                    targetX: 0, targetY: Math.PI / 2
+                },
+                {
+                    val: 2,
+                    indices: [0, 1, 5, 4], // -Y (Top)
+                    color: 'rgba(139, 92, 246, 0.9)', // Violet
+                    pips: [
+                        { x: -22, y: -size, z: -22 },
+                        { x: 22, y: -size, z: 22 }
+                    ],
+                    targetX: Math.PI / 2, targetY: 0
+                },
+                {
+                    val: 5,
+                    indices: [7, 6, 2, 3], // +Y (Bottom)
+                    color: 'rgba(236, 72, 153, 0.9)', // Pink
+                    pips: [
+                        { x: -22, y: size, z: -22 }, { x: 22, y: size, z: -22 },
+                        { x: 0, y: size, z: 0 },
+                        { x: -22, y: size, z: 22 }, { x: 22, y: size, z: 22 }
+                    ],
+                    targetX: -Math.PI / 2, targetY: 0
+                }
+            ];
+
+            let angleX = 0.5;
+            let angleY = 0.5;
+            let targetAngleX = 0.5;
+            let targetAngleY = 0.5;
+
+            let isRolling = false;
+            let isHovering = false;
+            let rollTicks = 0;
+            let rollDuration = 60; // total animation frames
+            let spinVx = 0;
+            let spinVy = 0;
+            let selectedFace = null;
+
+            window.triggerDieRoll = function () {
+                if (isRolling) return;
+                isRolling = true;
+                rollTicks = 0;
+
+                // Add rapid rotation speeds
+                spinVx = 0.25 + Math.random() * 0.2;
+                spinVy = 0.25 + Math.random() * 0.2;
+
+                // Select final roll value (1 to 6)
+                let rollIdx = Math.floor(Math.random() * faces.length);
+                selectedFace = faces[rollIdx];
+
+                document.getElementById('die-roll-status').innerText = '🌀 ROLLING... 🌀';
+                document.getElementById('die-roll-status').classList.remove('text-indigo-500');
+                document.getElementById('die-roll-status').classList.add('text-amber-500');
+            };
+
+            // Mouse Move triggers interactive tilt
+            canvas.addEventListener('mousemove', (e) => {
+                if (isRolling) return;
+                isHovering = true;
+                const rect = canvas.getBoundingClientRect();
+                const mx = (e.clientX - rect.left) * (canvas.width / rect.width);
+                const my = (e.clientY - rect.top) * (canvas.height / rect.height);
+
+                targetAngleY = (mx - canvas.width / 2) * 0.008;
+                targetAngleX = -(my - canvas.height / 2) * 0.008;
+            });
+
+            canvas.addEventListener('mouseleave', () => {
+                isHovering = false;
+            });
+
+            canvas.addEventListener('mousedown', () => {
+                window.triggerDieRoll();
+            });
+
+            // 3D rotation function
+            function rotate3D(point, ax, ay) {
+                // Rotate X
+                let y1 = point.y * Math.cos(ax) - point.z * Math.sin(ax);
+                let z1 = point.y * Math.sin(ax) + point.z * Math.cos(ax);
+                // Rotate Y
+                let x2 = point.x * Math.cos(ay) - z1 * Math.sin(ay);
+                let z2 = point.x * Math.sin(ay) + z1 * Math.cos(ay);
+
+                return { x: x2, y: y1, z: z2 };
+            }
+
+            function drawLoop() {
+                if (document.getElementById('welcome-screen').classList.contains('hidden')) {
+                    requestAnimationFrame(drawLoop);
+                    return; // Save CPU when not on home screen
+                }
+
+                requestAnimationFrame(drawLoop);
+
+                // --- PHYSICS UPDATE ---
+                if (isRolling) {
+                    rollTicks++;
+                    if (rollTicks < rollDuration * 0.6) {
+                        // Free spinning
+                        angleX += spinVx;
+                        angleY += spinVy;
+                        // Slow down velocities
+                        spinVx *= 0.96;
+                        spinVy *= 0.96;
+                    } else {
+                        // Smoothly transition and snap to the target angles for the rolled face
+                        let t = (rollTicks - rollDuration * 0.6) / (rollDuration * 0.4);
+                        // Make sure to ease in smoothly
+                        let ease = t * t * (3 - 2 * t);
+
+                        // Handle wrapping for angles so snap transitions look natural
+                        let diffX = selectedFace.targetX - angleX;
+                        let diffY = selectedFace.targetY - angleY;
+
+                        // Keep within [-PI, PI] to rotate shortest path
+                        diffX = Math.atan2(Math.sin(diffX), Math.cos(diffX));
+                        diffY = Math.atan2(Math.sin(diffY), Math.cos(diffY));
+
+                        angleX += diffX * ease * 0.45;
+                        angleY += diffY * ease * 0.45;
+
+                        if (rollTicks >= rollDuration) {
+                            angleX = selectedFace.targetX;
+                            angleY = selectedFace.targetY;
+                            targetAngleX = selectedFace.targetX;
+                            targetAngleY = selectedFace.targetY;
+                            isRolling = false;
+
+                            // Highlight final result
+                            document.getElementById('die-roll-status').innerText = '🎲 CLICK THE DIE TO ROLL! 🎲';
+                            document.getElementById('die-roll-status').classList.add('text-indigo-500');
+                            document.getElementById('die-roll-status').classList.remove('text-amber-500');
+                            document.getElementById('die-result-text').innerHTML = `Rolled Face: <span class="text-indigo-600 text-lg font-black bg-indigo-50 px-2 py-0.5 rounded shadow">${selectedFace.val}</span>`;
+                        }
+                    }
+                } else {
+                    // Standard floating drift
+                    if (!isHovering) {
+                        targetAngleY += 0.004;
+                        targetAngleX = Math.sin(Date.now() * 0.001) * 0.2;
+                    }
+                    // Smoothly follow hover tilt
+                    angleX += (targetAngleX - angleX) * 0.1;
+                    angleY += (targetAngleY - angleY) * 0.1;
+                }
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // 1. Rotate and project all vertices
+                let projVertices = vertices.map(v => {
+                    let rot = rotate3D(v, angleX, angleY);
+                    let dist = 280;
+                    let scale = dist / (dist + rot.z);
+                    return {
+                        x: canvas.width / 2 + rot.x * scale,
+                        y: canvas.height / 2 + rot.y * scale,
+                        z: rot.z
+                    };
+                });
+
+                // 2. Prepare faces with computed screen coordinates & depth for sorting
+                let renderedFaces = faces.map(f => {
+                    let faceVertices = f.indices.map(i => projVertices[i]);
+                    // Calculate center depth of face
+                    let avgZ = faceVertices.reduce((sum, v) => sum + v.z, 0) / 4;
+
+                    return {
+                        val: f.val,
+                        color: f.color,
+                        pips: f.pips,
+                        vertices: faceVertices,
+                        depth: avgZ
+                    };
+                });
+
+                // 3. Painter's Algorithm (Sort by depth so we draw back faces first)
+                renderedFaces.sort((a, b) => b.depth - a.depth);
+
+                // 4. Render Faces and their Pips
+                renderedFaces.forEach(f => {
+                    // Backface culling: Check normal winding direction to only render front-facing polygons
+                    let v0 = f.vertices[0];
+                    let v1 = f.vertices[1];
+                    let v2 = f.vertices[2];
+
+                    let edge1x = v1.x - v0.x;
+                    let edge1y = v1.y - v0.y;
+                    let edge2x = v2.x - v0.x;
+                    let edge2y = v2.y - v0.y;
+
+                    // Cross product to check visibility
+                    let cross = edge1x * edge2y - edge1y * edge2x;
+                    if (cross <= 0) return; // Cull backfaces
+
+                    // Draw Face Polygon
+                    ctx.beginPath();
+                    ctx.moveTo(f.vertices[0].x, f.vertices[0].y);
+                    for (let i = 1; i < 4; i++) {
+                        ctx.lineTo(f.vertices[i].x, f.vertices[i].y);
+                    }
+                    ctx.closePath();
+
+                    ctx.fillStyle = f.color;
+                    ctx.shadowColor = 'rgba(0,0,0,0.15)';
+                    ctx.shadowBlur = 6;
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+                    ctx.lineWidth = 2.5;
+                    ctx.stroke();
+
+                    // Draw face pips (dots)
+                    f.pips.forEach(pip => {
+                        let rotPip = rotate3D(pip, angleX, angleY);
+                        let dist = 280;
+                        let scale = dist / (dist + rotPip.z);
+                        let px = canvas.width / 2 + rotPip.x * scale;
+                        let py = canvas.height / 2 + rotPip.y * scale;
+
+                        ctx.beginPath();
+                        ctx.arc(px, py, 4.5 * scale, 0, Math.PI * 2);
+                        ctx.fillStyle = '#ffffff';
+                        ctx.shadowColor = '#ffffff';
+                        ctx.shadowBlur = 4;
+                        ctx.fill();
+                        ctx.shadowBlur = 0;
+                    });
+                });
+            }
+            drawLoop();
+        }
+    </script>
+</body>
+
+</html>
