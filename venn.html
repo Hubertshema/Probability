@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Venn Diagram Calculator</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans p-2 md:p-6 flex flex-col items-center h-screen overflow-hidden">
     <a href="index.html" id="back-btn" class="absolute top-4 left-4 bg-slate-200 text-slate-700 px-3 py-1 rounded hover:bg-slate-300 transition text-sm font-semibold flex items-center gap-2 z-50">&larr; Back to Dashboard</a>
@@ -12,7 +13,7 @@
         try { if (window.self !== window.top) document.getElementById('back-btn').style.display = 'none'; } 
         catch (e) { document.getElementById('back-btn').style.display = 'none'; }
     </script>
-    <div class="max-w-2xl w-full bg-white p-4 md:p-6 rounded-xl shadow border border-slate-200 flex flex-col h-full min-h-0">
+    <div class="max-w-2xl w-full bg-white p-4 md:p-6 rounded-xl shadow border border-slate-200 flex flex-col h-full overflow-y-auto">
         <div class="flex justify-between items-center mb-2 flex-shrink-0">
             <h1 class="text-lg md:text-2xl font-bold text-indigo-600">Venn Diagram (Additive Rule)</h1>
             <select id="calc-target" class="bg-indigo-50 border border-indigo-200 text-indigo-700 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-1.5 md:p-2 font-bold" onchange="updateVenn()">
@@ -45,12 +46,30 @@
         
         <p id="error-msg" class="text-[10px] md:text-xs text-red-500 font-bold mb-1 text-center hidden flex-shrink-0">Mathematical Error: Adjust sliders to create a valid probability scenario.</p>
 
-        <div class="bg-slate-100 p-2 flex-1 flex flex-col items-center justify-center rounded-lg border border-slate-200 mb-3 min-h-0 overflow-hidden">
+        <div class="bg-slate-100 p-2 flex-1 flex flex-col items-center justify-center rounded-lg border-2 border-slate-300 mb-3 min-h-0 relative overflow-hidden shadow-inner">
+            <div class="absolute top-2 left-2 text-xs md:text-sm font-bold text-slate-600 bg-white/80 px-2 py-1 rounded shadow-sm border border-slate-200 z-20">
+                Universal Set (Union) = <span id="lbl-venn-union" class="text-purple-600">0.70</span>
+            </div>
             <div class="relative w-full h-full flex items-center justify-center">
                 <!-- Circle A -->
-                <div id="circle-a" class="absolute left-1/2 top-1/2 w-32 h-32 md:w-40 md:h-40 bg-blue-500 opacity-60 rounded-full flex items-center justify-start pl-4 font-bold text-white text-lg mix-blend-multiply transition-transform duration-300">A</div>
+                <div id="circle-a" class="absolute left-1/2 top-1/2 w-32 h-32 md:w-40 md:h-40 bg-blue-500 opacity-60 rounded-full flex items-center justify-start pl-4 md:pl-6 text-white mix-blend-multiply transition-transform duration-300">
+                    <div class="flex flex-col items-center leading-tight">
+                        <span class="font-bold text-lg">A</span>
+                        <span class="text-xs font-semibold" id="lbl-venn-a">0.50</span>
+                    </div>
+                </div>
                 <!-- Circle B -->
-                <div id="circle-b" class="absolute left-1/2 top-1/2 w-32 h-32 md:w-40 md:h-40 bg-red-500 opacity-60 rounded-full flex items-center justify-end pr-4 font-bold text-white text-lg mix-blend-multiply transition-transform duration-300">B</div>
+                <div id="circle-b" class="absolute left-1/2 top-1/2 w-32 h-32 md:w-40 md:h-40 bg-red-500 opacity-60 rounded-full flex items-center justify-end pr-4 md:pr-6 text-white mix-blend-multiply transition-transform duration-300">
+                    <div class="flex flex-col items-center leading-tight">
+                        <span class="font-bold text-lg">B</span>
+                        <span class="text-xs font-semibold" id="lbl-venn-b">0.40</span>
+                    </div>
+                </div>
+                <!-- Intersection Label -->
+                <div id="venn-intersect-container" class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 flex flex-col items-center justify-center pointer-events-none transition-opacity duration-300">
+                    <span class="text-[10px] md:text-xs font-bold text-indigo-900 leading-tight">A∩B</span>
+                    <span class="text-[10px] md:text-xs font-bold text-indigo-900 leading-tight" id="lbl-venn-intersect">0.20</span>
+                </div>
             </div>
         </div>
 
@@ -62,6 +81,13 @@
             </div>
             <div class="text-xl md:text-2xl font-black text-indigo-700 mt-1" id="calc-result">0.70</div>
         </div>
+        
+        <button onclick="exportToExcel()" class="mt-3 flex-shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded text-sm w-full transition flex items-center justify-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Export to Excel
+        </button>
     </div>
 
     <script>
@@ -146,7 +172,14 @@
             document.getElementById('calc-formula').innerText = formula;
             document.getElementById('calc-equation').innerText = equation;
 
-            // 4. Draw Venn Diagram
+            // 4. Update Labels in Venn Diagram
+            document.getElementById('lbl-venn-a').innerText = pA.toFixed(2);
+            document.getElementById('lbl-venn-b').innerText = pB.toFixed(2);
+            document.getElementById('lbl-venn-intersect').innerText = pAB.toFixed(2);
+            document.getElementById('lbl-venn-union').innerText = union.toFixed(2);
+            document.getElementById('venn-intersect-container').style.opacity = pAB > 0 ? '1' : '0';
+
+            // 5. Draw Venn Diagram
             let overlapPercentage = pAB === 0 ? 0 : (pAB / Math.max(pA, pB, 0.01)) * 100; 
             let offset = 60 - (overlapPercentage * 0.6); 
             
@@ -160,6 +193,64 @@
         
         // Initial setup
         updateVenn();
+
+        async function exportToExcel() {
+            let result = document.getElementById('calc-result').innerText;
+            if (result === "ERROR") return; 
+
+            if (typeof ExcelJS === 'undefined') {
+                alert("ExcelJS library is loading, please try again in a moment.");
+                return;
+            }
+
+            let pA = document.getElementById('lbl-pa').innerText;
+            let pB = document.getElementById('lbl-pb').innerText;
+            let pAB = document.getElementById('lbl-pab').innerText;
+            let union = document.getElementById('lbl-union').innerText;
+            let targetSelect = document.getElementById('calc-target');
+            let target = targetSelect.options[targetSelect.selectedIndex].text;
+            
+            const workbook = new ExcelJS.Workbook();
+            const sheet = workbook.addWorksheet('Venn Diagram Result');
+
+            sheet.columns = [
+                { header: 'Event A P(A)', key: 'pA', width: 15 },
+                { header: 'Event B P(B)', key: 'pB', width: 15 },
+                { header: 'Intersection P(A∩B)', key: 'pAB', width: 22 },
+                { header: 'Union P(A∪B)', key: 'union', width: 18 },
+                { header: `Target`, key: 'target', width: 25 },
+                { header: `Result`, key: 'result', width: 15 }
+            ];
+
+            sheet.getRow(1).eachCell((cell) => {
+                cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4F46E5' } };
+                cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+            });
+
+            const row = sheet.addRow({ pA, pB, pAB, union, target, result });
+
+            row.eachCell((cell, colNumber) => {
+                cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+                if (colNumber === 6) {
+                    cell.font = { bold: true, color: { argb: 'FF4338CA' } }; // indigo-700
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEEF2FF' } }; // indigo-50
+                }
+            });
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'Venn_Diagram_Result.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
     </script>
 </body>
 </html>

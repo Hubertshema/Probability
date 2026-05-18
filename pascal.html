@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Pascal Triangle & Binomial Calculator</title>
+
+<style>
+body{
+    font-family: Arial, sans-serif;
+    background: linear-gradient(to right, #4facfe, #00f2fe);
+    text-align:center;
+}
+
+.container{
+    background:white;
+    width:70%;
+    margin:auto;
+    padding:30px;
+    margin-top:40px;
+    border-radius:10px;
+    box-shadow:0 0 15px rgba(0,0,0,0.2);
+}
+
+input{
+    padding:10px;
+    margin:10px;
+    width:80px;
+}
+
+button{
+    padding:10px 20px;
+    margin:15px;
+    background:#4facfe;
+    border:none;
+    color:white;
+    font-weight:bold;
+    border-radius:5px;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#0077ff;
+}
+
+#triangle{
+    margin-top:20px;
+    font-family: monospace;
+    white-space: pre;
+}
+</style>
+
+</head>
+<body>
+
+<div class="container">
+    <h1>Pascal Triangle & Binomial Coefficient</h1>
+
+    <label>Enter n:</label>
+    <input type="number" id="nValue" min="0">
+
+    <label>Enter r:</label>
+    <input type="number" id="rValue" min="0">
+
+    <br>
+    <button onclick="calculate()">Compute nCr</button>
+    <button onclick="generateTriangle()">Generate Pascal Triangle</button>
+
+    <h2 id="result"></h2>
+    <div id="triangle"></div>
+</div>
+
+<script>
+// Efficient Binomial Coefficient using symmetry
+function nCr(n, r) {
+    if (r > n) return 0;
+    if (r === 0 || r === n) return 1;
+
+    // symmetry optimization
+    r = Math.min(r, n - r);
+
+    let result = 1;
+
+    for (let i = 0; i < r; i++) {
+        result *= (n - i);
+        result /= (i + 1);
+    }
+
+    return Math.round(result);
+}
+
+// Compute button
+function calculate() {
+    let n = parseInt(document.getElementById("nValue").value);
+    let r = parseInt(document.getElementById("rValue").value);
+
+    if (isNaN(n) || isNaN(r)) {
+        alert("Please enter both n and r");
+        return;
+    }
+
+    let answer = nCr(n, r);
+    document.getElementById("result").innerHTML =
+        `Result: C(${n}, ${r}) = ${answer}`;
+}
+
+// Generate Pascal Triangle
+function generateTriangle() {
+    let n = parseInt(document.getElementById("nValue").value);
+    if (isNaN(n)) {
+        alert("Enter value of n first");
+        return;
+    }
+
+    let output = "";
+
+    for (let i = 0; i <= n; i++) {
+
+        for (let space = 0; space < n - i; space++)
+            output += " ";
+
+        for (let j = 0; j <= i; j++)
+            output += nCr(i, j) + " ";
+
+        output += "\n";
+    }
+
+    document.getElementById("triangle").textContent = output;
+}
+</script>
+
+</body>
+</html>

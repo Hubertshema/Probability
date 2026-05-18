@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bayes' Theorem Calculator</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans p-2 md:p-6 flex flex-col items-center h-screen overflow-hidden">
     <a href="index.html" id="back-btn" class="absolute top-4 left-4 bg-slate-200 text-slate-700 px-3 py-1 rounded hover:bg-slate-300 transition text-sm font-semibold flex items-center gap-2 z-50">&larr; Back to Dashboard</a>
@@ -13,8 +14,8 @@
         catch (e) { document.getElementById('back-btn').style.display = 'none'; }
     </script>
     <div class="max-w-4xl w-full bg-white p-4 md:p-6 rounded-xl shadow border border-slate-200 flex flex-col h-full min-h-0">
-        <h1 class="text-xl md:text-2xl font-bold text-indigo-600 mb-1 flex-shrink-0">General Bayes' Theorem Calculator</h1>
-        <p class="text-xs md:text-sm text-slate-500 mb-4 flex-shrink-0">Calculate conditional probabilities using the standard Bayes' rule: P(A|B) = [P(B|A) × P(A)] / P(B).</p>
+        <h1 class="text-xl md:text-2xl font-bold text-indigo-600 mb-1 flex-shrink-0">Bayes' Rule (Bayes' Theorem) Calculator</h1>
+        <p class="text-xs md:text-sm text-slate-500 mb-4 flex-shrink-0">Bayes' Theorem is a way of updating probabilities of a hypothesis when new information becomes available. It calculates "the probability of cause given effect" if you already know "the probability of effect given cause".</p>
 
         <div class="mb-4 p-3 md:p-4 bg-indigo-50 border border-indigo-200 rounded-lg flex items-center gap-4 flex-shrink-0">
             <label class="font-bold text-indigo-800 text-sm md:text-base">What do you want to calculate?</label>
@@ -58,20 +59,35 @@
             </div>
 
             <!-- OUTPUT / FORMULA -->
-            <div class="bg-slate-800 text-white p-4 md:p-6 rounded-lg shadow-inner flex flex-col justify-center h-full">
+            <div class="bg-slate-800 text-white p-4 md:p-6 rounded-lg shadow-xl transform -translate-y-2 md:-translate-y-3 flex flex-col h-full overflow-y-auto">
                 <div class="text-xs font-bold text-indigo-300 uppercase tracking-widest mb-2">Result</div>
                 <div class="text-sm text-slate-300 mb-4">Calculated Posterior Probability: <b id="result-label" class="text-lg">P(A | B)</b></div>
                 
                 <div class="text-5xl font-black text-indigo-400 mb-6" id="posterior">0.140</div>
                 
                 <div class="text-xs font-mono text-slate-400 mt-auto pt-4 border-t border-slate-600 space-y-3">
-                    <div id="formula-text" class="text-sm">
-                        P(A | B) = [ P(A) × P(B | A) ] ÷ P(B)
+                    <div class="text-xs font-bold text-indigo-300 uppercase tracking-widest mb-1 border-b border-slate-600 pb-1">Derivation</div>
+                    <div id="joint-formula-text" class="text-sm">
+                        P(A ∩ B) = P(A) × P(B | A)
                     </div>
-                    <div class="text-sm text-indigo-200 bg-slate-700 p-3 rounded border border-slate-600 shadow-inner">
-                        = [ <span id="val-1" class="text-blue-300">0.10</span> × <span id="val-2" class="text-emerald-300">0.07</span> ] ÷ <span id="val-3" class="text-rose-300">0.05</span>
+                    <div class="text-sm text-indigo-200 bg-slate-700 p-2 rounded border border-slate-600 shadow-inner mb-2">
+                        = <span id="val-a" class="text-blue-300">0.10</span> × <span id="val-b-given-a" class="text-emerald-300">0.07</span> = <span id="val-joint" class="text-white font-bold">0.007</span>
+                    </div>
+                    
+                    <div id="formula-text" class="text-sm mt-3">
+                        P(A | B) = P(A ∩ B) ÷ P(B)
+                    </div>
+                    <div class="text-sm text-indigo-200 bg-slate-700 p-2 rounded border border-slate-600 shadow-inner">
+                        = <span id="val-joint-2" class="text-white">0.007</span> ÷ <span id="val-b" class="text-rose-300">0.05</span>
                     </div>
                 </div>
+                
+                <button onclick="exportToExcel()" class="mt-4 flex-shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded text-sm w-full transition flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Export to Excel
+                </button>
             </div>
         </div>
     </div>
@@ -88,12 +104,10 @@
                 lblCond.innerText = "P(B | A)";
                 descCond.innerText = "The probability of B occurring given that A has occurred.";
                 resultLabel.innerText = "P(A | B)";
-                formulaText.innerHTML = "P(A | B) = [ P(B | A) × P(A) ] ÷ P(B)";
             } else {
                 lblCond.innerText = "P(A | B)";
                 descCond.innerText = "The probability of A occurring given that B has occurred.";
                 resultLabel.innerText = "P(B | A)";
-                formulaText.innerHTML = "P(B | A) = [ P(A | B) × P(B) ] ÷ P(A)";
             }
             calcBayes();
         }
@@ -109,34 +123,44 @@
             let resultDisplay = document.getElementById('posterior');
 
             if (mode === 'A_given_B') {
-                // P(A|B) = P(B|A) * P(A) / P(B)
+                // P(A|B) = P(A ∩ B) / P(B)
+                let joint = pA * pCond;
                 if (pB > 0) {
-                    result = (pCond * pA) / pB;
+                    result = joint / pB;
                 }
                 
-                document.getElementById('val-1').innerText = pCond.toFixed(3);
-                document.getElementById('val-2').innerText = pA.toFixed(3);
-                document.getElementById('val-3').innerText = pB.toFixed(3);
+                document.getElementById('val-a').innerText = pA.toFixed(3);
+                document.getElementById('val-b-given-a').innerText = pCond.toFixed(3);
+                document.getElementById('val-joint').innerText = joint.toFixed(4);
+                document.getElementById('val-joint-2').innerText = joint.toFixed(4);
+                document.getElementById('val-b').innerText = pB.toFixed(3);
 
-                // Styling colors to match inputs
-                document.getElementById('val-1').className = "text-emerald-300";
-                document.getElementById('val-2').className = "text-blue-300";
-                document.getElementById('val-3').className = "text-rose-300";
+                document.getElementById('val-a').className = "text-blue-300";
+                document.getElementById('val-b-given-a').className = "text-emerald-300";
+                document.getElementById('val-b').className = "text-rose-300";
+                
+                document.getElementById('joint-formula-text').innerText = "P(A ∩ B) = P(A) × P(B | A)";
+                document.getElementById('formula-text').innerText = "P(A | B) = P(A ∩ B) ÷ P(B)";
 
             } else {
-                // P(B|A) = P(A|B) * P(B) / P(A)
+                // P(B|A) = P(B ∩ A) / P(A)
+                let joint = pB * pCond;
                 if (pA > 0) {
-                    result = (pCond * pB) / pA;
+                    result = joint / pA;
                 }
 
-                document.getElementById('val-1').innerText = pCond.toFixed(3);
-                document.getElementById('val-2').innerText = pB.toFixed(3);
-                document.getElementById('val-3').innerText = pA.toFixed(3);
+                document.getElementById('val-a').innerText = pB.toFixed(3);
+                document.getElementById('val-b-given-a').innerText = pCond.toFixed(3);
+                document.getElementById('val-joint').innerText = joint.toFixed(4);
+                document.getElementById('val-joint-2').innerText = joint.toFixed(4);
+                document.getElementById('val-b').innerText = pA.toFixed(3);
 
-                // Styling colors to match inputs
-                document.getElementById('val-1').className = "text-emerald-300";
-                document.getElementById('val-2').className = "text-rose-300";
-                document.getElementById('val-3').className = "text-blue-300";
+                document.getElementById('val-a').className = "text-rose-300";
+                document.getElementById('val-b-given-a').className = "text-emerald-300";
+                document.getElementById('val-b').className = "text-blue-300";
+                
+                document.getElementById('joint-formula-text').innerText = "P(B ∩ A) = P(B) × P(A | B)";
+                document.getElementById('formula-text').innerText = "P(B | A) = P(B ∩ A) ÷ P(A)";
             }
 
             // Validation for mathematically impossible situations
@@ -152,6 +176,63 @@
                 resultDisplay.classList.remove("text-red-500");
                 resultDisplay.classList.add("text-indigo-400");
             }
+        }
+
+        async function exportToExcel() {
+            let pA = document.getElementById('p-a').value;
+            let pB = document.getElementById('p-b').value;
+            let pCond = document.getElementById('p-cond').value;
+            let mode = document.getElementById('calc-mode').value;
+            let result = document.getElementById('posterior').innerText;
+
+            if (result === "Err") return; // don't export on error
+
+            let target = mode === 'A_given_B' ? 'P(A | B)' : 'P(B | A)';
+            let given = mode === 'A_given_B' ? 'P(B | A)' : 'P(A | B)';
+
+            if (typeof ExcelJS === 'undefined') {
+                alert("ExcelJS library is loading, please try again in a moment.");
+                return;
+            }
+
+            const workbook = new ExcelJS.Workbook();
+            const sheet = workbook.addWorksheet('Bayes Result');
+
+            sheet.columns = [
+                { header: 'Event A P(A)', key: 'pA', width: 20 },
+                { header: 'Event B P(B)', key: 'pB', width: 20 },
+                { header: `Cond Prob ${given}`, key: 'pCond', width: 25 },
+                { header: `Result ${target}`, key: 'result', width: 20 }
+            ];
+
+            sheet.getRow(1).eachCell((cell) => {
+                cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4F46E5' } };
+                cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+            });
+
+            const row = sheet.addRow({ pA, pB, pCond, result });
+
+            row.eachCell((cell, colNumber) => {
+                cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+                if (colNumber === 4) {
+                    cell.font = { bold: true, color: { argb: 'FF3730A3' } };
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E7FF' } };
+                }
+            });
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'Bayes_Theorem_Result.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
         }
 
         // Initialize display
